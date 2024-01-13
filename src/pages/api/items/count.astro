@@ -1,0 +1,13 @@
+---
+import { fetchJson } from "../../../utils/fetch";
+
+const result = await fetchJson(
+  "https://hacker-news.firebaseio.com/v0/maxitem.json?print=pretty",
+);
+
+return new Response(JSON.stringify(result), {
+  headers: {
+    "content-type": "application/json",
+  },
+});
+---

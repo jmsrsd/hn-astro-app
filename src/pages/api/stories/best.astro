@@ -1,0 +1,17 @@
+---
+import { fetchJson } from "../../../utils/fetch";
+
+const { origin, searchParams } = Astro.url;
+
+const url = new URL(`${origin}/api/stories`);
+
+url.searchParams.set("type", "best");
+url.searchParams.set("limit", `${searchParams.get("limit")}`);
+url.searchParams.set("offset", `${searchParams.get("offset")}`);
+
+return new Response(JSON.stringify(await fetchJson(`${url}`)), {
+  headers: {
+    "content-type": "application/json",
+  },
+});
+---

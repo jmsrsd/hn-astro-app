@@ -1,0 +1,71 @@
+---
+import { fetchJson } from "../../../utils/fetch";
+
+import { clamp } from "../../../utils/math";
+
+const { url } = Astro;
+
+const { origin, searchParams, pathname } = url;
+
+const parsedLimit = +(searchParams.get("limit") ?? "");
+const limit = isNaN(parsedLimit) ? 10 : parsedLimit;
+
+const parsedOffset = +(searchParams.get("offset") ?? "");
+const offset = isNaN(parsedOffset) ? 0 : parsedOffset;
+
+const type = searchParams.get("type") ?? "top";
+
+const allIds: number[] = [];
+
+try {
+  const stories = await fetchJson(
+    `https://hacker-news.firebaseio.com/v0/${type}stories.json?print=pretty`,
+  );
+
+  for (const id of stories) {
+    allIds.push(id);
+  }
+} catch (e) {}
+
+const ids = [...allIds.slice(offset, clamp(offset + limit, 0, allIds.length))];
+
+const stories = await Promise.all(
+  ids.map((id) => {
+    return (async function () {
+      try {
+        return await fetchJson(`${origin}/api/items?id=${id}`);
+      } catch (e) {
+        return { id, error: `${e}` };
+      }
+    })();
+  }),
+);
+
+const prevOffset = clamp(offset - limit, 0, offset);
+const nextOffset = offset + limit;
+
+const originUrl = new URL(`${origin}${pathname}`);
+
+const prevUrl = new URL(`${originUrl}`);
+prevUrl.searchParams.set("type", type);
+prevUrl.searchParams.set("limit", `${limit}`);
+prevUrl.searchParams.set("offset", `${prevOffset}`);
+
+const nextUrl = new URL(`${originUrl}`);
+nextUrl.searchParams.set("type", type);
+nextUrl.searchParams.set("limit", `${limit}`);
+nextUrl.searchParams.set("offset", `${nextOffset}`);
+
+const payload = {
+  type,
+  prev: offset <= 0 ? null : `${prevUrl}`,
+  next: allIds.length <= offset + limit ? null : `${nextUrl}`,
+  data: stories.filter((story) => story !== null),
+};
+
+return new Response(JSON.stringify(payload), {
+  headers: {
+    "content-type": "application/json",
+  },
+});
+---
