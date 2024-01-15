@@ -1,5 +1,7 @@
 ---
-import { fetchJson } from "../../../utils/fetch";
+import * as hn from "../../../utils/hn";
+
+import * as API from "../../../utils/api";
 
 import { clamp } from "../../../utils/math";
 
@@ -7,20 +9,30 @@ const { url } = Astro;
 
 const { origin, searchParams, pathname } = url;
 
-const parsedLimit = +(searchParams.get("limit") ?? "");
-const limit = isNaN(parsedLimit) ? 10 : parsedLimit;
+const api = API.of(origin);
 
+const parsedLimit = +(searchParams.get("limit") ?? "");
+const defaultLimit = 10;
+const limit = isNaN(parsedLimit)
+  ? defaultLimit
+  : parsedLimit <= 0
+    ? defaultLimit
+    : parsedLimit;
+
+const defaultOffset = 0;
 const parsedOffset = +(searchParams.get("offset") ?? "");
-const offset = isNaN(parsedOffset) ? 0 : parsedOffset;
+const offset = isNaN(parsedOffset)
+  ? defaultOffset
+  : parsedOffset < 0
+    ? defaultOffset
+    : parsedOffset;
 
 const type = searchParams.get("type") ?? "top";
 
 const allIds: number[] = [];
 
 try {
-  const stories = await fetchJson(
-    `https://hacker-news.firebaseio.com/v0/${type}stories.json?print=pretty`,
-  );
+  const stories = await hn.api.fetch(`${type}stories`);
 
   for (const id of stories) {
     allIds.push(id);
@@ -33,7 +45,7 @@ const stories = await Promise.all(
   ids.map((id) => {
     return (async function () {
       try {
-        return await fetchJson(`${origin}/api/items?id=${id}`);
+        return await api.get("items", { id });
       } catch (e) {
         return { id, error: `${e}` };
       }

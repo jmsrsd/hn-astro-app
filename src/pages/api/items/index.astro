@@ -1,12 +1,13 @@
 ---
-import { fetchItemById } from "../../../utils/fetch";
+import * as hn from "../../../utils/hn";
 
 const searchParams = Astro.url.searchParams;
 
+const defaultId = -1;
 const parsedId = +(searchParams.get("id") ?? "");
-const id = isNaN(parsedId) ? -1 : parsedId;
+const id = isNaN(parsedId) ? defaultId : parsedId;
 
-const result = await fetchItemById(id);
+const result = await hn.api.item(id);
 
 return new Response(JSON.stringify(result), {
   headers: {

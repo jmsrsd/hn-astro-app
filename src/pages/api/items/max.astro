@@ -1,0 +1,13 @@
+---
+import * as hn from "../../../utils/hn";
+
+const result = await hn.api.fetch("maxitem");
+
+console.log(Astro.url);
+
+return new Response(JSON.stringify(result), {
+  headers: {
+    "content-type": "application/json",
+  },
+});
+---

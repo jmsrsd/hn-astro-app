@@ -1,15 +1,15 @@
 ---
-import { fetchJson } from "../../../utils/fetch";
+import * as API from "../../../utils/api";
 
 const { origin, searchParams } = Astro.url;
 
-const url = new URL(`${origin}/api/stories`);
+const api = API.of(origin);
 
-url.searchParams.set("type", "new");
-url.searchParams.set("limit", `${searchParams.get("limit")}`);
-url.searchParams.set("offset", `${searchParams.get("offset")}`);
+const params = Object.fromEntries([["type", "new"], ...searchParams.entries()]);
 
-return new Response(JSON.stringify(await fetchJson(`${url}`)), {
+const result = await api.get(`stories`, params);
+
+return new Response(JSON.stringify(result), {
   headers: {
     "content-type": "application/json",
   },
